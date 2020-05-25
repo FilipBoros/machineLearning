@@ -18,7 +18,7 @@ class SkiingGame(gym.Env):
         width = 500
         rows = 20
         gateWidth = 3
-        gateCountLimit = 5
+        gateCountLimit = 20
         window = pygame.display.set_mode((width, width))
         spawnX = 10
         spawnY = 1
@@ -66,8 +66,9 @@ class SkiingGame(gym.Env):
         skier = self.skier((255, 0, 0), (10, 1))  # spawn point
         gate = self.gate((0, 255, 0), randomGatePosition())
         finish = self.finishLine((0, 255, 0), (0, 19))
-        gateCountLimit = 5
+        gateCountLimit = 20
         score = 0
+        return observationArr
 
     def render(self, mode='human', close=False):
         global window
