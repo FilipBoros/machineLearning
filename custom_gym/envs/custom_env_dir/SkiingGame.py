@@ -41,6 +41,8 @@ class SkiingGame(gym.Env):
 
         if isFinishing == False:
             self.skier.move(self=skier,isFinishing=False, action=action)
+        else:
+            skier.move(True, action)
 
         if gateCountLimit > 0:
             gate.move()
@@ -49,9 +51,6 @@ class SkiingGame(gym.Env):
                 reward = 1 #odmena za prechod brankou
         else:
             isFinishing = True
-
-        if isFinishing == True:
-            skier.move(True, action)
 
         if skier.body[1] == 20:
             episode_over = True
@@ -89,7 +88,9 @@ class SkiingGame(gym.Env):
                 gateCountLimit -= 1
             else:
                 self.body = (self.body[0], self.body[1] - 1)
-            observationArr[1][self.body[1]][self.body[0]:self.body[0] + gateWidth] = 1
+				
+            if gateCountLimit > 0:	
+                observationArr[1][self.body[1]][self.body[0]:self.body[0] + gateWidth] = 1
 
         def draw(self, surface):
             global width, rows, gateWidth
