@@ -10,7 +10,7 @@ from gym import spaces
 from setuptools.command.dist_info import dist_info
 
 
-class SkiingEnv(gym.Env):
+class SkiingGame(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
