@@ -7,18 +7,19 @@ import gym
 import numpy as np
 import time
 from gym import spaces
+from setuptools.command.dist_info import dist_info
 
 
-class SkiingGame(gym.Env):
+class SkiingEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
-        global width, window, rows, skier, gate, gateCountLimit, finish, isFinishing, score, scoreFont, gateWidth, observationArr
+        global width, window, rows, skier, gate, gateCountLimit, finish, isFinishing, score, scoreFont, gateWidth, observationArr, distanceToGate
         pygame.init()
         width = 500
         rows = 20
         gateWidth = 3
-        gateCountLimit = 20
+        gateCountLimit = 5
         window = pygame.display.set_mode((width, width))
         spawnX = 10
         spawnY = 1
@@ -33,16 +34,27 @@ class SkiingGame(gym.Env):
         finish = self.finishLine((0, 255, 0), (0, 19))
         self.action_space = spaces.Discrete(2)
 
+        calculateDistanceToGate()
+
+
 
     def step(self, action):
-        global width, rows, skier, gate, gateCountLimit, finish, isFinishing, score, scoreFont, gateWidth, observationArr
+        global width, rows, skier, gate, gateCountLimit, finish, isFinishing, score, scoreFont, gateWidth, observationArr, distanceToGate
         episode_over = False
         reward = 0
+
+        previousDistance = distanceToGate
 
         if isFinishing == False:
             self.skier.move(self=skier,isFinishing=False, action=action)
         else:
             skier.move(True, action)
+
+        calculateDistanceToGate()
+
+        #ak sa hrac pohol smerom od branky
+        if distanceToGate > 0 and distanceToGate >= previousDistance:
+            reward = -1
 
         if gateCountLimit > 0:
             gate.move()
@@ -52,6 +64,10 @@ class SkiingGame(gym.Env):
         else:
             isFinishing = True
 
+        #ak je zjazd do cielovej rovinky, tak odmenu nepocitame
+        if isFinishing == True:
+           reward = 0
+
         if skier.body[1] == 20:
             episode_over = True
 
@@ -59,14 +75,15 @@ class SkiingGame(gym.Env):
         return ob, reward, episode_over, {}
 
     def reset(self):
-        global observationArr, skier, gate, finish, gateCountLimit, score, isFinishing
+        global observationArr, skier, gate, finish, gateCountLimit, score, isFinishing, distanceToGate
         isFinishing = False
         observationArr = np.zeros((2, rows, rows), dtype=int)
         skier = self.skier((255, 0, 0), (10, 1))  # spawn point
         gate = self.gate((0, 255, 0), randomGatePosition())
         finish = self.finishLine((0, 255, 0), (0, 19))
-        gateCountLimit = 20
+        gateCountLimit = 5
         score = 0
+        calculateDistanceToGate()
         return observationArr
 
     def render(self, mode='human', close=False):
@@ -88,8 +105,8 @@ class SkiingGame(gym.Env):
                 gateCountLimit -= 1
             else:
                 self.body = (self.body[0], self.body[1] - 1)
-				
-            if gateCountLimit > 0:	
+
+            if gateCountLimit > 0:
                 observationArr[1][self.body[1]][self.body[0]:self.body[0] + gateWidth] = 1
 
         def draw(self, surface):
@@ -157,6 +174,13 @@ class SkiingGame(gym.Env):
             pygame.draw.rect(surface, self.color,
                              (self.body[0] * distance, self.body[1] * distance, distance, distance))
 
+def calculateDistanceToGate():
+    global distanceToGate
+    # ak je hrac v strede branky
+    if abs(skier.body[0] - gate.body[0]) - abs(skier.body[0] - (gate.body[0] + 2)) == 0:
+        distanceToGate = 0
+    else:
+        distanceToGate = min(abs(skier.body[0] - gate.body[0]), abs(skier.body[0] - (gate.body[0] + 2)))
 
 def randomGatePosition():
     global rows, gateWidth
@@ -175,4 +199,3 @@ def redrawWindow(surface):
     scoretext = scoreFont.render("Score {0}".format(score), 1, (0, 0, 0))
     surface.blit(scoretext, (5, 10))
     pygame.display.update()
-
